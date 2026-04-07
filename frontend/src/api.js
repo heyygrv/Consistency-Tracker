@@ -46,3 +46,20 @@ export async function fetchAllLogs() {
   if (!res.ok) throw new Error('Failed to fetch all logs');
   return res.json();
 }
+
+export async function fetchDailyLog(date) {
+  const url = date ? `${API_BASE}/dailyLogs?date=${date}` : `${API_BASE}/dailyLogs`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Failed to fetch daily log');
+  return res.json();
+}
+
+export async function updateDailyLog(data) {
+  const res = await fetch(`${API_BASE}/dailyLogs`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to update daily log');
+  return res.json();
+}

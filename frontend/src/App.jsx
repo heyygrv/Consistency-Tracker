@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Activity, Plus, Target, Calendar, TrendingUp, Sun, Moon } from 'lucide-react';
-import { fetchHabits, createHabit, deleteHabit, toggleHabit, fetchAllLogs } from './api';
+import { Activity, Plus, Target, Calendar, TrendingUp, Sun, Moon, SmilePlus } from 'lucide-react';
+import { fetchHabits, createHabit, deleteHabit, toggleHabit, fetchAllLogs, fetchDailyLog, updateDailyLog } from './api';
 import StatsBar from './components/StatsBar';
-import HabitCard from './components/HabitCard';
-import ContributionGrid from './components/ContributionGrid';
+import HabitSection from './components/HabitSection';
 import AddHabitModal from './components/AddHabitModal';
+import DailyReflectionModal from './components/DailyReflectionModal';
 
 export default function App() {
   const [habits, setHabits] = useState([]);
@@ -12,7 +12,9 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [selectedHabit, setSelectedHabit] = useState(null);
+  const [showReflection, setShowReflection] = useState(false);
+  const [unmarkingHabit, setUnmarkingHabit] = useState(null);
+  const [dailyLog, setDailyLog] = useState({ mood: '', notes: '' });
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode');
     if (saved !== null) return JSON.parse(saved);
@@ -35,12 +37,14 @@ export default function App() {
   const loadData = useCallback(async () => {
     try {
       setError(null);
-      const [habitsData, logsData] = await Promise.all([
+      const [habitsData, logsData, dlData] = await Promise.all([
         fetchHabits(),
         fetchAllLogs(),
+        fetchDailyLog(),
       ]);
       setHabits(habitsData);
       setAllLogs(logsData);
+      setDailyLog(dlData);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -65,7 +69,6 @@ export default function App() {
   const handleDeleteHabit = async (id) => {
     try {
       await deleteHabit(id);
-      if (selectedHabit === id) setSelectedHabit(null);
       await loadData();
     } catch (err) {
       setError(err.message);
@@ -73,6 +76,19 @@ export default function App() {
   };
 
   const handleToggle = async (id) => {
+    const habit = habits.find((h) => h._id === id);
+    if (!habit) return;
+
+    // If unchecking, prompt the Reflection Modal instead of toggling immediately
+    if (habit.completedToday) {
+      setUnmarkingHabit(habit);
+      setShowReflection(true);
+    } else {
+      await executeToggle(id);
+    }
+  };
+
+  const executeToggle = async (id) => {
     try {
       await toggleHabit(id);
       await loadData();
@@ -81,19 +97,37 @@ export default function App() {
     }
   };
 
-  const gridLogs = selectedHabit
-    ? allLogs.filter((l) => l.habitId?._id === selectedHabit || l.habitId === selectedHabit)
-    : allLogs;
+  const handleSaveReflection = async (data) => {
+    try {
+      await updateDailyLog(data);
+      if (unmarkingHabit) {
+        await executeToggle(unmarkingHabit._id);
+        setUnmarkingHabit(null);
+      }
+      setShowReflection(false);
+      await loadData(); // refresh daily log data
+    } catch (err) {
+      setError(err.message);
+    }
+  };
 
-  const selectedHabitData = selectedHabit
-    ? habits.find((h) => h._id === selectedHabit)
-    : null;
+  const handleCloseReflection = () => {
+    if (unmarkingHabit) {
+      // User skipped the reflection entirely, but we still proceed with unchecking
+      executeToggle(unmarkingHabit._id);
+      setUnmarkingHabit(null);
+    }
+    setShowReflection(false);
+  };
+
+
+
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
         <div className="flex flex-col items-center gap-4 animate-fade-in">
-          <div className="w-12 h-12 border-4 border-slate-200 dark:border-slate-700 border-t-violet-500 rounded-full animate-spin" />
+          <div className="w-12 h-12 border-4 border-slate-200 dark:border-slate-700 border-t-slate-900 dark:border-t-white rounded-full animate-spin" />
           <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Loading your habits...</p>
         </div>
       </div>
@@ -106,8 +140,8 @@ export default function App() {
       <header className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-black transition-colors duration-300">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-violet-500 flex items-center justify-center">
-              <Activity className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center bg-white dark:bg-black">
+              <Activity strokeWidth={1.5} className="w-5 h-5 text-slate-700 dark:text-slate-200" />
             </div>
             <div>
               <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Consistency Tracker</h1>
@@ -133,9 +167,9 @@ export default function App() {
             <button
               id="add-habit-btn"
               onClick={() => setShowModal(true)}
-              className="hover-lift flex items-center gap-2 px-4 py-2.5 bg-violet-500 hover:bg-violet-600 text-white text-sm font-semibold rounded-xl transition-colors duration-200"
+              className="hover-lift flex items-center gap-2 px-4 py-2.5 bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-100 text-white dark:text-slate-900 text-sm font-semibold rounded-xl transition-colors duration-200"
             >
-              <Plus className="w-4 h-4" />
+              <Plus strokeWidth={2} className="w-4 h-4" />
               <span className="hidden sm:inline">New Habit</span>
             </button>
           </div>
@@ -156,34 +190,28 @@ export default function App() {
         {/* Stats Bar */}
         <StatsBar habits={habits} />
 
-        {/* Contribution Grid Section */}
-        <section className="animate-fade-in">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-slate-400" />
-              <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                {selectedHabitData ? selectedHabitData.name : 'All Habits'} — {new Date().getFullYear()} Contribution Grid
-              </h2>
-            </div>
-            {selectedHabit && (
-              <button
-                onClick={() => setSelectedHabit(null)}
-                className="text-xs font-medium text-slate-400 hover:text-violet-500 dark:hover:text-violet-400 transition-colors"
-              >
-                Show All
-              </button>
-            )}
+        {/* Daily Reflection Widget */}
+        <section className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 flex items-center justify-between text-left transition-colors cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                 onClick={() => { setUnmarkingHabit(null); setShowReflection(true); }}>
+          <div className="flex items-center gap-4">
+             <div className={`w-12 h-12 rounded-xl border flex items-center justify-center ${dailyLog.mood ? 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20' : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}>
+                <SmilePlus className={`w-6 h-6 ${dailyLog.mood ? 'text-amber-500' : 'text-slate-400'}`} />
+             </div>
+             <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  Daily Reflection
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md line-clamp-1">
+                  {dailyLog.mood ? (dailyLog.notes || `Mood: ${dailyLog.mood}`) : 'How are you feeling today? Tap to log.'}
+                </p>
+             </div>
           </div>
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 overflow-x-auto transition-colors duration-300">
-            <ContributionGrid
-              logs={gridLogs}
-              color={selectedHabitData?.color || '#8b5cf6'}
-              habitCount={selectedHabit ? 1 : habits.length}
-            />
-          </div>
+          <button className="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+            {dailyLog.mood ? 'Edit' : 'Log'}
+          </button>
         </section>
 
-        {/* Habits Grid */}
+        {/* Habits List */}
         <section>
           <div className="flex items-center gap-2 mb-4">
             <Target className="w-4 h-4 text-slate-400" />
@@ -193,8 +221,8 @@ export default function App() {
 
           {habits.length === 0 ? (
             <div className="bg-white dark:bg-slate-800 rounded-2xl p-12 text-center border border-slate-200 dark:border-slate-700 animate-fade-in transition-colors duration-300">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
-                <TrendingUp className="w-8 h-8 text-slate-400 dark:text-slate-500" />
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center">
+                <TrendingUp strokeWidth={1.5} className="w-8 h-8 text-slate-400 dark:text-slate-500" />
               </div>
               <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-2">No habits yet</h3>
               <p className="text-slate-400 text-sm mb-6 max-w-sm mx-auto">
@@ -202,27 +230,28 @@ export default function App() {
               </p>
               <button
                 onClick={() => setShowModal(true)}
-                className="hover-lift inline-flex items-center gap-2 px-5 py-2.5 bg-violet-500 hover:bg-violet-600 text-white text-sm font-semibold rounded-xl transition-colors"
+                className="hover-lift inline-flex items-center gap-2 px-5 py-2.5 bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-100 text-white dark:text-slate-900 text-sm font-semibold rounded-xl transition-colors"
               >
-                <Plus className="w-4 h-4" />
+                <Plus strokeWidth={2} className="w-4 h-4" />
                 Add Your First Habit
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {habits.map((habit, i) => (
-                <HabitCard
-                  key={habit._id}
-                  habit={habit}
-                  index={i}
-                  isSelected={selectedHabit === habit._id}
-                  onToggle={() => handleToggle(habit._id)}
-                  onDelete={() => handleDeleteHabit(habit._id)}
-                  onSelect={() =>
-                    setSelectedHabit(selectedHabit === habit._id ? null : habit._id)
-                  }
-                />
-              ))}
+            <div className="flex flex-col gap-6">
+              {habits.map((habit) => {
+                const habitLogs = allLogs.filter(
+                  (l) => l.habitId?._id === habit._id || l.habitId === habit._id
+                );
+                return (
+                  <HabitSection
+                    key={habit._id}
+                    habit={habit}
+                    logs={habitLogs}
+                    onToggle={() => handleToggle(habit._id)}
+                    onDelete={() => handleDeleteHabit(habit._id)}
+                  />
+                );
+              })}
             </div>
           )}
         </section>
@@ -232,6 +261,15 @@ export default function App() {
         <AddHabitModal
           onClose={() => setShowModal(false)}
           onAdd={handleAddHabit}
+        />
+      )}
+
+      {showReflection && (
+        <DailyReflectionModal
+          onClose={handleCloseReflection}
+          onSave={handleSaveReflection}
+          initialData={dailyLog}
+          unmarkingHabit={unmarkingHabit}
         />
       )}
     </div>

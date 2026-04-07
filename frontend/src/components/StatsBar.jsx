@@ -4,7 +4,7 @@ export default function StatsBar({ habits }) {
   const totalHabits = habits.length;
   const completedToday = habits.filter((h) => h.completedToday).length;
   const bestStreak = habits.reduce((max, h) => Math.max(max, h.longestStreak || 0), 0);
-  const totalStreaks = habits.reduce((sum, h) => sum + (h.currentStreak || 0), 0);
+  const activeStreaks = habits.filter((h) => (h.currentStreak || 0) > 0).length;
 
   const stats = [
     {
@@ -27,7 +27,7 @@ export default function StatsBar({ habits }) {
     },
     {
       label: 'Active Streaks',
-      value: `${totalStreaks}d`,
+      value: activeStreaks.toString(),
       icon: Flame,
       bgColor: 'bg-rose-500',
     },

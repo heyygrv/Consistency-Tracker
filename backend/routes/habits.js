@@ -85,8 +85,8 @@ router.get('/', async (req, res) => {
 // ── POST /api/habits — create a new habit ──────────────────────────
 router.post('/', async (req, res) => {
   try {
-    const { name, color } = req.body;
-    const habit = await Habit.create({ name, color });
+    const { name, color, icon } = req.body;
+    const habit = await Habit.create({ name, color, icon });
     res.status(201).json({
       ...habit.toObject(),
       currentStreak: 0,

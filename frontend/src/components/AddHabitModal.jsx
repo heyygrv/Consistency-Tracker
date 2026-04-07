@@ -1,15 +1,32 @@
 import { useState } from 'react';
-import { X, Sparkles } from 'lucide-react';
+import {
+  X, Sparkles, Target, Dumbbell, Book, Code, Flame,
+  Droplets, Brain, Coffee, Music, Heart
+} from 'lucide-react';
 
 const PRESET_COLORS = [
-  '#8b5cf6', '#3b82f6', '#a855f7', '#f59e0b',
-  '#ef4444', '#06b6d4', '#ec4899', '#14b8a6',
-  '#f97316', '#22c55e', '#64748b', '#84cc16',
+  '#ec4899', '#ef4444', '#f97316', '#f59e0b',
+  '#84cc16', '#22c55e', '#14b8a6', '#0ea5e9',
+  '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef',
+];
+
+const PRESET_ICONS = [
+  { name: 'Target', Icon: Target },
+  { name: 'Dumbbell', Icon: Dumbbell },
+  { name: 'Book', Icon: Book },
+  { name: 'Code', Icon: Code },
+  { name: 'Flame', Icon: Flame },
+  { name: 'Droplets', Icon: Droplets },
+  { name: 'Brain', Icon: Brain },
+  { name: 'Coffee', Icon: Coffee },
+  { name: 'Music', Icon: Music },
+  { name: 'Heart', Icon: Heart },
 ];
 
 export default function AddHabitModal({ onClose, onAdd }) {
   const [name, setName] = useState('');
   const [color, setColor] = useState('#8b5cf6');
+  const [icon, setIcon] = useState('Target');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -22,7 +39,7 @@ export default function AddHabitModal({ onClose, onAdd }) {
     setLoading(true);
     setError('');
     try {
-      await onAdd({ name: name.trim(), color });
+      await onAdd({ name: name.trim(), color, icon });
     } catch (err) {
       setError(err.message);
       setLoading(false);
@@ -49,8 +66,8 @@ export default function AddHabitModal({ onClose, onAdd }) {
 
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-violet-500 flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-white" />
+          <div className="w-10 h-10 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center">
+            <Sparkles strokeWidth={1.5} className="w-5 h-5 text-slate-700 dark:text-slate-300" />
           </div>
           <div>
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">New Habit</h2>
@@ -72,7 +89,7 @@ export default function AddHabitModal({ onClose, onAdd }) {
               placeholder="e.g. Exercise, Reading, Meditation..."
               maxLength={50}
               autoFocus
-              className="w-full px-4 py-3 bg-white dark:bg-black border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 transition-all text-sm"
+              className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-700 transition-all text-sm"
             />
           </div>
 
@@ -87,16 +104,39 @@ export default function AddHabitModal({ onClose, onAdd }) {
                   key={c}
                   type="button"
                   onClick={() => setColor(c)}
-                  className={`w-8 h-8 rounded-lg transition-all duration-200 hover:scale-110 ${
+                  className={`w-6 h-6 rounded-full transition-all duration-200 hover:scale-110 ${
                     color === c
-                      ? 'ring-2 ring-offset-2 ring-offset-white dark:ring-offset-slate-800 scale-110'
+                      ? 'ring-2 ring-offset-2 ring-offset-white dark:ring-offset-slate-900 scale-110'
                       : ''
                   }`}
                   style={{
-                    backgroundColor: c,
-                    ...(color === c ? { '--tw-ring-color': c } : {}),
+                     backgroundColor: c,
+                    '--tw-ring-color': c,
                   }}
                 />
+              ))}
+            </div>
+          </div>
+
+          {/* Icon picker */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">
+              Icon
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {PRESET_ICONS.map(({ name: iconName, Icon }) => (
+                <button
+                  key={iconName}
+                  type="button"
+                  onClick={() => setIcon(iconName)}
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                    icon === iconName
+                      ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm ring-1 ring-slate-200 dark:ring-slate-700'
+                      : 'text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-600 dark:hover:text-slate-300'
+                  }`}
+                >
+                  <Icon strokeWidth={1.5} className="w-5 h-5" />
+                </button>
               ))}
             </div>
           </div>
@@ -107,11 +147,11 @@ export default function AddHabitModal({ onClose, onAdd }) {
           )}
 
           {/* Actions */}
-          <div className="flex items-center gap-3 pt-2">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-sm font-semibold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+              className="px-4 py-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 text-sm font-medium transition-colors"
             >
               Cancel
             </button>
@@ -119,8 +159,8 @@ export default function AddHabitModal({ onClose, onAdd }) {
               id="submit-habit-btn"
               type="submit"
               disabled={loading}
-              className={`flex-1 px-4 py-2.5 bg-violet-500 hover:bg-violet-600 text-white text-sm font-semibold rounded-xl transition-colors duration-200 ${
-                loading ? 'opacity-50 cursor-wait' : 'hover-lift'
+              className={`px-5 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-semibold rounded-xl transition-all duration-200 ${
+                loading ? 'opacity-50 cursor-wait' : 'hover:bg-slate-800 dark:hover:bg-slate-100'
               }`}
             >
               {loading ? 'Adding...' : 'Add Habit'}

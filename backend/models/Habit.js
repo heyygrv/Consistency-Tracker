@@ -17,6 +17,10 @@ const habitSchema = new mongoose.Schema({
       return colors[Math.floor(Math.random() * colors.length)];
     },
   },
+  icon: {
+    type: String,
+    default: 'Trophy',
+  },
   createdAt: {
     type: Date,
     default: Date.now,
