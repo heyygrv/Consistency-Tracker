@@ -27,16 +27,22 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Connect to MongoDB and start server
+// Connect to MongoDB
 mongoose
   .connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/consistency-tracker')
   .then(() => {
     console.log('✅ Connected to MongoDB');
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on http://localhost:${PORT}`);
-    });
   })
   .catch((err) => {
     console.error('❌ MongoDB connection error:', err.message);
-    process.exit(1);
   });
+
+// Start server only if we're not running on Vercel
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+  });
+}
+
+// Export the Express app for Vercel Serverless Functions
+module.exports = app;
