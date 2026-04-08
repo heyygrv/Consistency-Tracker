@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 
 const logSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
   habitId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Habit',
@@ -12,7 +17,7 @@ const logSchema = new mongoose.Schema({
   },
 });
 
-// Prevent duplicate logs for the same habit on the same day
-logSchema.index({ habitId: 1, date: 1 }, { unique: true });
+// Prevent duplicate logs for the same user, habit on the same day
+logSchema.index({ userId: 1, habitId: 1, date: 1 }, { unique: true });
 
 module.exports = mongoose.model('Log', logSchema);

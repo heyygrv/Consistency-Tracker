@@ -10,6 +10,7 @@ dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const habitRoutes = require('./routes/habits');
 const dailyLogRoutes = require('./routes/dailyLogs');
+const authRoutes = require('./routes/auth');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -55,6 +56,7 @@ app.use(async (req, res, next) => {
 });
 
 // Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/habits', habitRoutes);
 app.use('/api/dailyLogs', dailyLogRoutes);
 

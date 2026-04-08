@@ -1,10 +1,14 @@
 const mongoose = require('mongoose');
 
 const dailyLogSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
   date: {
     type: Date,
     required: true,
-    unique: true,
   },
   mood: {
     type: String,
@@ -24,6 +28,9 @@ const dailyLogSchema = new mongoose.Schema({
     default: Date.now,
   }
 });
+
+// Ensure a user only has one daily log per day
+dailyLogSchema.index({ userId: 1, date: 1 }, { unique: true });
 
 dailyLogSchema.pre('save', function(next) {
   this.updatedAt = Date.now();

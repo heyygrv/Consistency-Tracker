@@ -1,7 +1,44 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
+const getHeaders = () => {
+  const token = localStorage.getItem('token');
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+};
+
+export async function loginUser(data) {
+  const res = await fetch(`${API_BASE}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || 'Failed to login');
+  }
+  return res.json();
+}
+
+export async function registerUser(data) {
+  const res = await fetch(`${API_BASE}/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || 'Failed to register');
+  }
+  return res.json();
+}
+
 export async function fetchHabits() {
-  const res = await fetch(`${API_BASE}/habits`);
+  const res = await fetch(`${API_BASE}/habits`, { headers: getHeaders() });
   if (!res.ok) throw new Error('Failed to fetch habits');
   return res.json();
 }
@@ -9,7 +46,7 @@ export async function fetchHabits() {
 export async function createHabit(data) {
   const res = await fetch(`${API_BASE}/habits`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getHeaders(),
     body: JSON.stringify(data),
   });
   if (!res.ok) {
@@ -22,6 +59,7 @@ export async function createHabit(data) {
 export async function deleteHabit(id) {
   const res = await fetch(`${API_BASE}/habits/${id}`, {
     method: 'DELETE',
+    headers: getHeaders(),
   });
   if (!res.ok) throw new Error('Failed to delete habit');
   return res.json();
@@ -30,26 +68,27 @@ export async function deleteHabit(id) {
 export async function toggleHabit(id) {
   const res = await fetch(`${API_BASE}/habits/${id}/toggle`, {
     method: 'POST',
+    headers: getHeaders(),
   });
   if (!res.ok) throw new Error('Failed to toggle habit');
   return res.json();
 }
 
 export async function fetchHabitLogs(id) {
-  const res = await fetch(`${API_BASE}/habits/${id}/logs`);
+  const res = await fetch(`${API_BASE}/habits/${id}/logs`, { headers: getHeaders() });
   if (!res.ok) throw new Error('Failed to fetch logs');
   return res.json();
 }
 
 export async function fetchAllLogs() {
-  const res = await fetch(`${API_BASE}/habits/logs/all`);
+  const res = await fetch(`${API_BASE}/habits/logs/all`, { headers: getHeaders() });
   if (!res.ok) throw new Error('Failed to fetch all logs');
   return res.json();
 }
 
 export async function fetchDailyLog(date) {
   const url = date ? `${API_BASE}/dailyLogs?date=${date}` : `${API_BASE}/dailyLogs`;
-  const res = await fetch(url);
+  const res = await fetch(url, { headers: getHeaders() });
   if (!res.ok) throw new Error('Failed to fetch daily log');
   return res.json();
 }
@@ -57,9 +96,11 @@ export async function fetchDailyLog(date) {
 export async function updateDailyLog(data) {
   const res = await fetch(`${API_BASE}/dailyLogs`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getHeaders(),
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Failed to update daily log');
+  if (!res.ok) {
+    throw new Error('Failed to update daily log');
+  }
   return res.json();
 }
